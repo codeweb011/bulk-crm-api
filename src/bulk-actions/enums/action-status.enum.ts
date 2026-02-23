@@ -1,0 +1,7 @@
+export enum ActionStatus {
+    QUEUED = 'QUEUED',
+    PROCESSING = 'PROCESSING',
+    COMPLETED = 'COMPLETED',
+    FAILED = 'FAILED',
+    PARTIAL = 'PARTIAL',
+}
