@@ -7,12 +7,16 @@ import { ActionStatus } from './enums/action-status.enum';
 import { ListBulkActionsDto } from './dto/list-bulk-actions.dto';
 import { EVENT_PUBLISHER } from 'src/messaging/messaging.constants';
 import * as messagingInterface from 'src/messaging/messaging.interface';
+import { BulkActionLog } from './entities/bulk-action-logs.entity';
 
 @Injectable()
 export class BulkActionsService {
     constructor(
         @InjectRepository(BulkAction)
         private readonly bulkRepository: Repository<BulkAction>,
+
+        @InjectRepository(BulkActionLog)
+        private readonly logRepository: Repository<BulkActionLog>,
 
         @Inject(EVENT_PUBLISHER)
         private readonly eventPublisher: messagingInterface.EventPublisher
@@ -109,6 +113,57 @@ export class BulkActionsService {
                 startedAt: item.startedAt,
                 completedAt: item.completedAt,
                 totalDurationMs: item.totalDurationMs,
+            })),
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
+
+    async getBulkActionLogs(
+        bulkActionId: string,
+        status?: string,
+        page = 1,
+        limit = 50,
+    ) {
+
+        // 1️⃣ Validate bulk action exists
+        const exists = await this.bulkRepository.findOne({
+            where: { id: bulkActionId },
+            select: ['id'],
+        });
+
+        if (!exists) {
+            throw new NotFoundException(
+                `Bulk action with id ${bulkActionId} not found`,
+            );
+        }
+
+        const skip = (page - 1) * limit;
+
+        const qb = this.logRepository
+            .createQueryBuilder('log')
+            .where('log.bulkActionId = :bulkActionId', { bulkActionId });
+
+        if (status) {
+            qb.andWhere('log.status = :status', { status });
+        }
+
+        qb.orderBy('log.createdAt', 'DESC');
+        qb.skip(skip).take(limit);
+
+        const [data, total] = await qb.getManyAndCount();
+
+        return {
+            data: data.map((log) => ({
+                id: log.id,
+                entityId: log.entityId,
+                status: log.status,
+                errorMessage: log.errorMessage,
+                createdAt: log.createdAt,
             })),
             pagination: {
                 page,

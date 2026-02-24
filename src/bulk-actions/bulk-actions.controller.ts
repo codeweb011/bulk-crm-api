@@ -21,4 +21,19 @@ export class BulkActionsController {
     async list(@Query() query: ListBulkActionsDto) {
         return this.bulkService.listBulkActions(query);
     }
+
+    @Get(':id/logs')
+    async getLogs(
+        @Param('id') id: string,
+        @Query('status') status?: string,
+        @Query('page') page = '1',
+        @Query('limit') limit = '50',
+    ) {
+        return this.bulkService.getBulkActionLogs(
+            id,
+            status,
+            Number(page),
+            Number(limit),
+        );
+    }
 }

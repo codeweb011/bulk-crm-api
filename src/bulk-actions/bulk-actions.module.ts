@@ -4,9 +4,10 @@ import { BulkActionsController } from './bulk-actions.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BulkAction } from './entities/bulk-action.entity';
 import { MessagingModule } from 'src/messaging/messaging.module';
+import { BulkActionLog } from './entities/bulk-action-logs.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BulkAction]), MessagingModule],
+  imports: [TypeOrmModule.forFeature([BulkAction, BulkActionLog]), MessagingModule],
   controllers: [BulkActionsController],
   providers: [BulkActionsService],
 })
